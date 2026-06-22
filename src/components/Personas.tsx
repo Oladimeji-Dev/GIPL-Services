@@ -22,14 +22,18 @@ function PersonaSelect({
   onChange: (index: number) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(selectedIndex);
+  const [keyboardIndex, setKeyboardIndex] = useState(selectedIndex);
   const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const listboxId = useId();
+  const activeIndex = open ? keyboardIndex : selectedIndex;
 
-  useEffect(() => {
-    setActiveIndex(selectedIndex);
-  }, [selectedIndex]);
+  function toggleOpen() {
+    setOpen((wasOpen) => {
+      if (!wasOpen) setKeyboardIndex(selectedIndex);
+      return !wasOpen;
+    });
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -51,19 +55,19 @@ function PersonaSelect({
       switch (event.key) {
         case "ArrowDown":
           event.preventDefault();
-          setActiveIndex((i) => (i + 1) % personas.length);
+          setKeyboardIndex((i) => (i + 1) % personas.length);
           break;
         case "ArrowUp":
           event.preventDefault();
-          setActiveIndex((i) => (i - 1 + personas.length) % personas.length);
+          setKeyboardIndex((i) => (i - 1 + personas.length) % personas.length);
           break;
         case "Home":
           event.preventDefault();
-          setActiveIndex(0);
+          setKeyboardIndex(0);
           break;
         case "End":
           event.preventDefault();
-          setActiveIndex(personas.length - 1);
+          setKeyboardIndex(personas.length - 1);
           break;
         case "Enter":
         case " ":
@@ -92,7 +96,7 @@ function PersonaSelect({
 
   function select(index: number) {
     onChange(index);
-    setActiveIndex(index);
+    setKeyboardIndex(index);
     setOpen(false);
   }
 
@@ -104,7 +108,7 @@ function PersonaSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listboxId}
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggleOpen}
         className="section-heading inline-flex cursor-pointer items-center gap-3 rounded-full border border-espresso-900/20 bg-surface py-1 pr-4 pl-6 transition-colors hover:border-espresso-900/35"
         style={{ fontSize: headingSize }}
       >
@@ -144,7 +148,7 @@ function PersonaSelect({
                 role="option"
                 aria-selected={isSelected}
                 data-index={i}
-                onMouseEnter={() => setActiveIndex(i)}
+                onMouseEnter={() => setKeyboardIndex(i)}
                 onClick={() => select(i)}
                 className={`cursor-pointer px-5 py-2.5 text-base transition-colors ${
                   isActive

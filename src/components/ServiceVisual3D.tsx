@@ -247,8 +247,9 @@ export default function ServiceVisual3D({ active, fallbackSrc, fallbackAlt }: Pr
     running: boolean;
   } | null>(null);
 
-  // Update activeRef on every render so the RAF loop can read it.
-  activeRef.current = active;
+  useEffect(() => {
+    activeRef.current = active;
+  }, [active]);
 
   const buildScene = useCallback((container: HTMLDivElement) => {
     const W = container.clientWidth;
