@@ -77,6 +77,8 @@ export default function FloorPlan3D({ staticCamera = false }: FloorPlan3DProps) 
     const H = container.clientHeight;
     if (W < 2 || H < 2) return undefined;
 
+    const isMobileViewport = window.matchMedia(MOBILE_MQ).matches;
+
     const tok: TokMap = {
       paper:       readToken("--color-paper",       TOKENS.paper),
       sand100:     readToken("--color-sand-100",     TOKENS.sand100),
@@ -264,11 +266,13 @@ export default function FloorPlan3D({ staticCamera = false }: FloorPlan3DProps) 
       showAutoLabel(autoRoomIds[autoIndex]);
     }, 2500);
 
-    const positionInterval = setInterval(() => {
-      if (isManualHover || !autoRoomId) return;
-      const state = computeLabelState(autoRoomId);
-      if (state) setHoverState(state);
-    }, 120);
+    const positionInterval = isMobileViewport
+      ? undefined
+      : setInterval(() => {
+          if (isManualHover || !autoRoomId) return;
+          const state = computeLabelState(autoRoomId);
+          if (state) setHoverState(state);
+        }, 120);
 
     function onPointerMove(e: PointerEvent) {
       const rect = renderer.domElement.getBoundingClientRect();
@@ -336,9 +340,11 @@ export default function FloorPlan3D({ staticCamera = false }: FloorPlan3DProps) 
     }
     loop();
 
-    function onResize() {
-      const cw = container.clientWidth;
-      const ch = container.clientHeight;
+    let lastCw = W;
+    let lastCh = H;
+    let resizeRaf = 0;
+
+    function applySize(cw: number, ch: number) {
       const asp = cw / ch;
       const fh = planD * 1.5 * mobileFrustumScale();
       const fw = fh * asp;
@@ -348,6 +354,28 @@ export default function FloorPlan3D({ staticCamera = false }: FloorPlan3DProps) 
       (camera as THREE.OrthographicCamera).bottom = -fh / 2;
       camera.updateProjectionMatrix();
       renderer.setSize(cw, ch);
+      lastCw = cw;
+      lastCh = ch;
+    }
+
+    function onResize() {
+      cancelAnimationFrame(resizeRaf);
+      resizeRaf = requestAnimationFrame(() => {
+        const cw = container.clientWidth;
+        const ch = container.clientHeight;
+        if (cw < 2 || ch < 2) return;
+
+        const mobile = window.matchMedia(MOBILE_MQ).matches;
+        if (
+          mobile &&
+          Math.abs(cw - lastCw) < 2 &&
+          Math.abs(ch - lastCh) < 56
+        ) {
+          return;
+        }
+
+        applySize(cw, ch);
+      });
     }
     const ro = new ResizeObserver(onResize);
     ro.observe(container);
@@ -360,9 +388,10 @@ export default function FloorPlan3D({ staticCamera = false }: FloorPlan3DProps) 
 
     return () => {
       cancelAnimationFrame(rafId);
+      cancelAnimationFrame(resizeRaf);
       clearTimeout(initialDelay);
       clearInterval(cycleInterval);
-      clearInterval(positionInterval);
+      if (positionInterval) clearInterval(positionInterval);
       ro.disconnect();
       io.disconnect();
       renderer.domElement.removeEventListener("pointermove", onPointerMove);

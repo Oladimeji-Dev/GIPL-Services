@@ -55,9 +55,9 @@ export function HeroMotion() {
         </div>
       </div>
 
-      <div className="mx-auto mt-8 w-full max-w-[1400px] px-5 sm:px-8 flex-1 min-h-0">
+      <div className="mx-auto mt-8 w-full max-w-[1400px] px-5 sm:px-8 flex-1 min-h-0 max-md:flex-none">
         <m.div
-          className="relative isolate z-0 w-full h-full overflow-hidden rounded-2xl"
+          className="relative isolate z-0 w-full overflow-hidden rounded-2xl max-md:aspect-[3/2] md:h-full"
           variants={isMobile ? heroCanvasMobile : heroCanvas}
           initial="hidden"
           animate="visible"
